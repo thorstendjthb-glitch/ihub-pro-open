@@ -1,0 +1,5 @@
+# Shows a "Sponsor" button on the GitHub repo.
+ko_fi: dj_thb                              # https://ko-fi.com/dj_thb
+custom:
+  - "https://www.paypal.me/djthb"
+# github: [thorstendjthb-glitch]          # uncomment after enabling GitHub Sponsors

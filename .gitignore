@@ -1,0 +1,26 @@
+# Build output
+.pio/
+build/
+build_check.log
+
+# ESP-IDF managed components (auto-fetched from dependencies.lock on build)
+managed_components/
+
+# Auto-generated at build by gzip_dashboard.py (from webui_html.h)
+main/webui_html_gz.h
+
+# Generated / local sdkconfig
+sdkconfig
+sdkconfig.ihub
+sdkconfig.old
+sdkconfig.*.old
+
+# Local build-time secrets — NEVER commit (see main/secrets.h.example)
+main/secrets.h
+
+# Editor / OS cruft
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db

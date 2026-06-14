@@ -1,0 +1,3 @@
+# Managed Components (IDF Component Manager) — wird beim Build automatisch geladen.
+dependencies:
+  espressif/mdns: "^1.2"

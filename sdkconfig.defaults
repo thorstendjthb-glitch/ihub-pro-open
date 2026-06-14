@@ -1,0 +1,54 @@
+# sdkconfig.defaults — Mars Hydro iHub-Pro Custom Firmware
+# Voreinstellungen; werden beim ersten `idf.py build` in sdkconfig übernommen.
+
+# ── Ziel-Chip ──
+CONFIG_IDF_TARGET="esp32s3"
+
+# ── Konsole über USB-Serial-JTAG ──
+# UART0 (GPIO43/44) ist vom BL0940 belegt → Logging NICHT über UART0!
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_UART_DEFAULT=n
+
+# ── Flash: 8 MB ──
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
+
+# ── PSRAM: 2 MB embedded Quad ──
+# WIEDER AN (2026-06-05): PSRAM war NICHT die Dimmer-Ursache (das war der fehlende Enable-Pin
+# GPIO38/36). Mit PSRAM=n in der App, aber PSRAM=y im (per esptool geflashten) Bootloader war
+# die Speicher-Konfig inkonsistent → instabiler/langer Boot + Webserver-Aussetzer. Konsistent
+# mit dem Bootloader wieder aktiviert. GPIO35/37 (DIM-PWM) sind von Quad-PSRAM nicht betroffen.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_QUAD=y
+CONFIG_SPIRAM_SPEED_80M=y
+
+# ── Partition-Tabelle (OTA-fähig, 2 App-Slots) ──
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# ── FreeRTOS Tick 1000 Hz (feinere Timer für Modbus-Timing) ──
+CONFIG_FREERTOS_HZ=1000
+
+# ── Log-Level ──
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# ── Bluetooth LE (NimBLE) — passives Scannen der BLE-Sensoren (ThermoPro TP357 etc.) ──
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=y
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=n
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=n
+# WLAN/BLE-Koexistenz im 2,4-GHz-Funk
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
+
+# ── Brick-Schutz / Robustheit (2026-06-10) ──
+# Task-Watchdog soll bei einem hängenden Task NICHT nur loggen, sondern panic->Reboot
+# ausloesen (kommt mit der App -> wirkt sofort per OTA). Sonst laeuft das Geraet bei einem
+# Task-Haenger "tot" weiter statt sich zu erholen.
+CONFIG_ESP_TASK_WDT_PANIC=y
+# Bootloader-Rollback: ein per OTA geschriebenes, aber nicht-bootendes Image faellt nach
+# Bootloop automatisch auf die alte Partition zurueck. ACHTUNG: greift erst, wenn der
+# Bootloader EINMAL per Kabel mit dieser Option neu geflasht wurde (OTA ersetzt den
+# Bootloader nie). Bis dahin uebernimmt der App-Level-Boot-Validator in app_main.c den Schutz.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
