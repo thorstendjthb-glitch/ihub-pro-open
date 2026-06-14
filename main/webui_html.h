@@ -4,7 +4,7 @@
 static const char DASHBOARD_HTML[] = R"HTML(<!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>iHub-Pro · Grow</title>
-<script>try{if(localStorage.getItem('ihub_lang')==='en'){var s=document.createElement('script');s.src='/i18n.js';s.defer=true;document.head.appendChild(s);}}catch(e){}</script>
+<script>try{if(localStorage.getItem('ihub_lang')==='en'){var s=document.createElement('script');s.src='/i18n.js?v=3';s.defer=true;document.head.appendChild(s);}}catch(e){}</script>
 <style>
 :root{--bg:#0b0f0c;--c1:#141a16;--c2:#1a211c;--bd:#2a322c;--fg:#e6edf3;--mut:#8b9bb0;--grn:#3fb950;--grn2:#2ea043;--blu:#388bfd;--amb:#f5a524;--red:#e5484d;--vio:#a371f7}
 *{box-sizing:border-box;margin:0;padding:0}

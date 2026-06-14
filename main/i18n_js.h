@@ -325,10 +325,61 @@ static const char I18N_JS[] = R"JS(
   "Abluft (Lüfter)": "Exhaust (fan)",
   "Lüfter": "Fan"
   };
+  // Phrasen-Fallback für interpolierte Strings (Zahl/Name mitten im Text), bei denen
+  // kein exakter Schlüssel matcht. Distinktive Fragmente, längste zuerst ersetzt.
+  var PH=[
+   ["Profile, Befeuchter, Abluft & Lichtplan sind wirkungslos","Profiles, humidifier, exhaust & light schedule are inactive"],
+   ["Klima-Automatik AUSGESCHALTET","Climate automation OFF"],
+   ["kühlen + entfeuchten","cooling + dehumidifying"],
+   ["Free-Cooling reicht nicht","free cooling insufficient"],
+   ["Grow-Plan · aktuell","Grow plan · current"],
+   ["geschätzte Ernte","est. harvest"],
+   ["noch nie gegossen","never watered"],
+   ["Klima läuft","AC running"],
+   ["Ernte heute","Harvest today"],
+   ["Ernte in ~","Harvest in ~"],
+   ["letzte Phase","last phase"],
+   ["zuletzt vor ","last "],
+   ["Nebelstufe","Mist level"],
+   ["Grow-Start","Grow start"],
+   ["Grow ändern","Edit grow"],
+   ["Grow starten","Start grow"],
+   ["über Plan","over plan"],
+   ["Grow-Tag","Grow day"],
+   ["Plan-Tag","Plan day"],
+   ["Stecklinge","Clones"],
+   ["Automatics","Autoflower"],
+   ["entfeuchten","dehumidifying"],
+   ["einschalten","enable"],
+   ["Trocknen","Dry"],
+   ["Drehzahl","Speed"],
+   ["Schwenk","Oscillation"],
+   ["Nächste:","Next:"],
+   ["Nächste ","Next "],
+   ["Kammer A","Chamber A"],
+   ["Kammer B","Chamber B"],
+   ["Kammer ","Chamber "],
+   ["kühlen","cooling"],
+   ["Drossel","floor"],
+   ["läuft","running"],
+   ["Stufe ","Step "],
+   ["Ziel ","Target "],
+   ["Wuchs","Veg"],
+   ["Blüte","Bloom"],
+   ["Seeds","Seedling"],
+   [" Tagen"," days"],
+   [" Tage"," days"],
+   [" Tg"," d"]
+  ];
+  PH.sort(function(a,b){return b[0].length-a[0].length;});
   function trNode(n){
     var t=n.nodeValue; if(t==null) return;
     var k=t.trim(); if(!k) return;
-    var v=EN[k]; if(v!=null && v!==k) n.nodeValue=t.replace(k,v);
+    var v=EN[k];
+    if(v!=null){ if(v!==k) n.nodeValue=t.replace(k,v); return; }
+    var o=t;
+    for(var i=0;i<PH.length;i++){ if(o.indexOf(PH[i][0])>=0) o=o.split(PH[i][0]).join(PH[i][1]); }
+    if(o!==t) n.nodeValue=o;
   }
   function walk(n){
     if(!n) return;

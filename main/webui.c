@@ -37,7 +37,7 @@ static esp_err_t dash_get(httpd_req_t *req)
 static esp_err_t i18n_get(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "application/javascript; charset=utf-8");
-    httpd_resp_set_hdr(req, "Cache-Control", "max-age=86400");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");  // immer aktuell (sonst hängt alte Übersetzung im Cache)
     return httpd_resp_send(req, I18N_JS, HTTPD_RESP_USE_STRLEN);
 }
 
