@@ -575,7 +575,7 @@ async function load(){
  const acb=$('acb');if(s.ac_demand){acb.className='info';acb.textContent='❄ Klima läuft — '+(['','kühlen','entfeuchten','kühlen + entfeuchten'][s.ac_mode]||'aktiv')+' (Free-Cooling reicht nicht)';}else acb.className='info hide';
  // Warnbanner: Klima-Automatik ausgeschaltet → Profile/Regelung wirkungslos (Vorfall 2026-06-12)
  const ao=$('autooff');const offs=(s.chambers||[]).map((c,i)=>c.auto===false?i:-1).filter(i=>i>=0);
- if(offs.length){ao.className='alarm';ao.innerHTML='⛔ Klima-Automatik AUSGESCHALTET: '+offs.map(i=>'Kammer '+'AB'[i]).join(' + ')+' — Profile, Befeuchter, Abluft & Lichtplan sind wirkungslos!'+offs.map(i=>` <button class="btn gray" style="margin-left:10px;padding:5px 12px;font-weight:600" onclick="chamberAuto(${i})">Kammer ${'AB'[i]} einschalten</button>`).join('');}
+ if(offs.length){ao.className='alarm';ao.innerHTML='<span>⛔ Klima-Automatik AUSGESCHALTET:</span> '+offs.map(i=>'<span>Kammer '+'AB'[i]+'</span>').join(' + ')+' <span>— Profile, Befeuchter, Abluft & Lichtplan sind wirkungslos!</span>'+offs.map(i=>` <button class="btn gray" style="margin-left:10px;padding:5px 12px;font-weight:600" onclick="chamberAuto(${i})">Kammer ${'AB'[i]} einschalten</button>`).join('');}
  else ao.className='alarm hide';
  // Grow-Timeline pro Kammer (ganz oben)
  renderGrows(s);

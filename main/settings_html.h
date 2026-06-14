@@ -243,7 +243,7 @@ async function load(){
  for(let s=0;s<10;s++){
   const e=sch[s]||{mode:0,on:0,off:0,con:0,coff:0};
   const mo=SM.map((n,i)=>`<option value="${i}" ${e.mode==i?'selected':''}>${n}</option>`).join('');
-  tbs.innerHTML+=`<tr><td>Steckdose ${s+1}</td><td><select data-sm="${s}">${mo}</select></td><td><input type="time" data-son="${s}" value="${hm(e.on)}"></td><td><input type="time" data-soff="${s}" value="${hm(e.off)}"></td><td><input data-scon="${s}" value="${e.con}"></td><td><input data-scoff="${s}" value="${e.coff}"></td></tr>`;
+  tbs.innerHTML+=`<tr><td><span>Steckdose</span> ${s+1}</td><td><select data-sm="${s}">${mo}</select></td><td><input type="time" data-son="${s}" value="${hm(e.on)}"></td><td><input type="time" data-soff="${s}" value="${hm(e.off)}"></td><td><input data-scon="${s}" value="${e.con}"></td><td><input data-scoff="${s}" value="${e.coff}"></td></tr>`;
  }
  // ── 2-Kammer-Zuordnung ──
  const FN=["Licht 1","Licht 2","Luftbefeuchter","Entfeuchter","Bewässerung","Ventilator","Abluft (Inline)","Heizung","Gerät 1 (CO₂)","Gerät 2"];
@@ -270,7 +270,7 @@ async function load(){
  const tba=document.querySelector('#asgT tbody');tba.innerHTML='';
  for(let s=0;s<10;s++){
   const rc=asg.relch?asg.relch[s]:0,rr=asg.relrole?asg.relrole[s]:s;
-  tba.innerHTML+=`<tr><td>Steckdose ${s+1}</td><td><select data-relch="${s}">${KO(rc)}</select></td><td><select data-relrole="${s}">${RO(rr)}</select></td></tr>`;
+  tba.innerHTML+=`<tr><td><span>Steckdose</span> ${s+1}</td><td><select data-relch="${s}">${KO(rc)}</select></td><td><select data-relrole="${s}">${RO(rr)}</select></td></tr>`;
  }
  dimch0.innerHTML=KO(asg.dimch?asg.dimch[0]:0);
  dimch1.innerHTML=KO(asg.dimch?asg.dimch[1]:0);
