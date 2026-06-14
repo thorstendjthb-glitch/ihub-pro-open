@@ -1,5 +1,11 @@
 # iHub-Pro Open Firmware 🌱
 
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+![Platform: ESP32-S3](https://img.shields.io/badge/platform-ESP32--S3-green)
+![Framework: ESP-IDF](https://img.shields.io/badge/framework-ESP--IDF-red)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-MQTT-41BDF5)
+![Language](https://img.shields.io/badge/UI-DE%20%2F%20EN-yellow)
+
 Open-source ESP32-S3 firmware that replaces the cloud firmware on the **Mars Hydro
 iHub-Pro** 10-outlet smart grow controller. It turns the device into a fully
 **local, cloud-free climate computer** for a grow tent or room: VPD-based climate
@@ -80,8 +86,10 @@ pio run -e ihub                 # build
 pio run -e ihub -t upload       # flash over USB (first time)
 ```
 
-After the first flash you normally update **over the air** (see below) — no need to
-open the case again.
+> 📌 **First flash needs a one-time USB solder mod** (the device has no USB port). The
+> full step-by-step with photos and safety notes is in
+> **[docs/FLASHING.md](docs/FLASHING.md)**. After that, all updates are **over-the-air**
+> from the web UI — no need to open the case again.
 
 > Nothing here contains credentials. Wi-Fi, MQTT and the login are all set at runtime
 > (see *First boot*). If you want to pre-bake Wi-Fi into the binary for several
@@ -154,8 +162,10 @@ otherwise the **boot-validator rolls back** to the previous firmware automatical
 
 ## 📖 Documentation
 
-The full manual — every screen, every setting, the climate logic and the recommended
-grow values — is in **[docs/HANDBOOK.md](docs/HANDBOOK.md)**.
+- **[docs/FLASHING.md](docs/FLASHING.md)** — get the firmware onto the device (USB solder
+  mod, with photos), back up the stock firmware, and OTA updates.
+- **[docs/HANDBOOK.md](docs/HANDBOOK.md)** — the full manual: every screen, every setting,
+  the climate logic and the recommended grow values.
 
 ---
 
