@@ -4,7 +4,7 @@
 static const char DASHBOARD_HTML[] = R"HTML(<!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>iHub-Pro · Grow</title>
-<script src="/i18n.js"></script>
+<script>try{if(localStorage.getItem('ihub_lang')==='en'){var s=document.createElement('script');s.src='/i18n.js';s.defer=true;document.head.appendChild(s);}}catch(e){}</script>
 <style>
 :root{--bg:#0b0f0c;--c1:#141a16;--c2:#1a211c;--bd:#2a322c;--fg:#e6edf3;--mut:#8b9bb0;--grn:#3fb950;--grn2:#2ea043;--blu:#388bfd;--amb:#f5a524;--red:#e5484d;--vio:#a371f7}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -409,7 +409,7 @@ function calendar(ch,nowS,gstart,gdays){
  if(!gstart){
   return `<div class="card" style="margin:0"><h3>🌱 ${nm} · Grow</h3>
    <div class="gset"><label style="color:var(--mut)">Start</label><input type="date" id="gd${ch}">
-   <label style="color:var(--mut)">Tage</label><input type="number" id="gn${ch}" value="90" style="width:70px">
+   <label style="color:var(--mut)">Tage</label><input type="number" id="gn${ch}" value="${gdays||90}" style="width:70px">
    <button class="btn" onclick="setGrow(${ch})">Grow starten</button></div></div>`;
  }
  const start=new Date(gstart*1000), harvest=new Date((gstart+gdays*DAY)*1000);
@@ -437,11 +437,12 @@ function calendar(ch,nowS,gstart,gdays){
 let editing=[false,false];
 function buildGrows(){const s=LS,chs=s.chambers||[],nowS=s.now||Math.floor(Date.now()/1000);
  $('grows').innerHTML=[0,1].map(ch=>{const c=chs[ch]||{};
-  return editing[ch]?calendar(ch,nowS,0,90):calendar(ch,nowS,c.gstart||0,c.gdays||90);}).join('');}
+  return editing[ch]?calendar(ch,nowS,0,c.gdays||90):calendar(ch,nowS,c.gstart||0,c.gdays||90);}).join('');}
 function editGrow(ch){editing[ch]=true;buildGrows();}
 function setGrow(ch){
+ const cur=(LS&&LS.chambers&&LS.chambers[ch])||{};
  const dv=$('gd'+ch).value, dn=+$('gn'+ch).value||90;
- const ep=dv?Math.floor(new Date(dv+'T00:00:00').getTime()/1000):Math.floor(Date.now()/1000);
+ const ep=dv?Math.floor(new Date(dv+'T00:00:00').getTime()/1000):(cur.gstart||Math.floor(Date.now()/1000));
  const ds=new Date(ep*1000).toLocaleDateString('de-DE');
  askConfirm('Grow <b>Kammer '+(ch?'B':'A')+'</b> mit Start <b>'+ds+'</b> ('+dn+' Tage) speichern?',()=>{
   editing[ch]=false;

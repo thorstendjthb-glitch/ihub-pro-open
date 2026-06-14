@@ -5,7 +5,7 @@ static const char SETTINGS_HTML[] = R"HTML(<!doctype html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>iHub-Pro · Einstellungen</title>
-<script src="/i18n.js"></script>
+<script>try{if(localStorage.getItem('ihub_lang')==='en'){var s=document.createElement('script');s.src='/i18n.js';s.defer=true;document.head.appendChild(s);}}catch(e){}</script>
 <style>
 :root{--bg:#0d1117;--card:#161b22;--bd:#21262d;--fg:#e6edf3;--mut:#8b949e;--grn:#3fb950;--acc:#2ea043}
 *{box-sizing:border-box;margin:0;padding:0}
