@@ -103,7 +103,7 @@ esp_err_t ota_start(httpd_handle_t *out_server)
     cfg.max_uri_handlers = 44;       // Reserve für WebUI- + Login- + i18n- + Portal- + Diagnose-URIs
     cfg.recv_wait_timeout = 20;
     cfg.stack_size = 8192;
-    cfg.max_open_sockets = 7;        // so viele wie LWIP erlaubt (Default-Reserve)
+    cfg.max_open_sockets = 12;       // mehr Parallel-Verbindungen (LWIP_MAX_SOCKETS=16 → max 13)
     cfg.lru_purge_enable = true;     // Sockets voll → älteste Verbindung schließen statt neue
                                      // abzuweisen (sonst „PC drin, Handy kommt nicht mehr rein")
 

@@ -52,3 +52,9 @@ CONFIG_ESP_TASK_WDT_PANIC=y
 # Bootloader EINMAL per Kabel mit dieser Option neu geflasht wurde (OTA ersetzt den
 # Bootloader nie). Bis dahin uebernimmt der App-Level-Boot-Validator in app_main.c den Schutz.
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# ── HTTP-Server: mehr gleichzeitige Verbindungen (mehrere Tabs/Geräte) ──
+# LWIP-Default = 10 TCP-Sockets → httpd kann max. 7 (reserviert 3). Auf 16 angehoben,
+# damit der Webserver 12 parallele Verbindungen bekommt (siehe ota.c max_open_sockets).
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_ACTIVE_TCP=24
