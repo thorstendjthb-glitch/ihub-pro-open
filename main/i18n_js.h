@@ -254,6 +254,7 @@ static const char I18N_JS[] = R"JS(
   "letzte Phase": "last phase",
   "Grow-Plan · aktuell": "Grow plan · current",
   "Grow ändern": "Edit grow",
+  "ca. Ernte": "est. harvest",
   "Mo": "Mon",
   "Di": "Tue",
   "Mi": "Wed",

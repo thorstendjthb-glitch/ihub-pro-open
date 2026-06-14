@@ -418,27 +418,20 @@ function calendar(ch,nowS,gstart,gdays){
  const prog=Math.max(0,Math.min(100,(nowS-gstart)/(gdays*DAY)*100));
  const opt={day:'2-digit',month:'2-digit',year:'numeric'};
  const remTxt = remain>0 ? `Ernte in ~<b class="big">${remain}</b> Tagen` : (remain===0?'Ernte heute! 🎉':`+${-remain} Tage über Plan`);
- // calendar of current month
- const y=now.getFullYear(),m=now.getMonth(),today=now.getDate();
- const firstDow=(new Date(y,m,1).getDay()+6)%7, dim=new Date(y,m+1,0).getDate();
- const hvD=(harvest.getFullYear()===y&&harvest.getMonth()===m)?harvest.getDate():-1;
- const mon=now.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
- let cg='';for(let i=0;i<firstDow;i++)cg+='<span></span>';
- for(let d=1;d<=dim;d++){let c='cd';if(d===today)c+=' today';if(d===hvD)c+=' harvest';cg+=`<span class="${c}">${d}</span>`;}
  return `<div class="card" style="margin:0"><div class="gh">
   <div>
    <div class="gsub">${nm} · Grow-Tag</div>
    <div class="gday">${dayX} <span style="font-size:18px;color:var(--mut)">/ ${gdays}</span></div>
    <div class="bar"><div style="width:${prog.toFixed(1)}%"></div></div>
-   <div class="kv"><span>Start: ${start.toLocaleDateString('de-DE',opt)}</span><span>${remTxt}</span></div>
-   <div class="kv"><span>geschätzte Ernte:</span><span class="big">${harvest.toLocaleDateString('de-DE',opt)}</span></div>
+   <div class="kv"><span>${remTxt}</span></div>
    ${planBar(c)}
    <div style="margin-top:8px"><button class="btn gray" onclick="editGrow(${ch})">Grow ändern</button></div>
   </div>
-  <div>
-   <div class="calmon">${mon}</div>
-   <div class="calhead"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-   <div class="calgrid">${cg}</div>
+  <div style="align-self:center;text-align:center;min-width:140px">
+   <div class="gsub">Start</div>
+   <div class="big" style="font-size:22px">${start.toLocaleDateString('de-DE',opt)}</div>
+   <div class="gsub" style="margin-top:14px">ca. Ernte</div>
+   <div class="big" style="font-size:22px">${harvest.toLocaleDateString('de-DE',opt)}</div>
   </div></div></div>`;
 }
 let editing=[false,false];
