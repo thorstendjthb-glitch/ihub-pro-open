@@ -381,6 +381,11 @@ static const char I18N_JS[] = R"JS(
     var k=t.trim(); if(!k) return;
     var v=EN[k];
     if(v!=null){ if(v!==k) n.nodeValue=t.replace(k,v); return; }
+    // chart/tile labels render "<name> 📈" or "<name> 💧": translate the name, keep the icon
+    if(k.length>3 && (k.slice(-3)===' 📈' || k.slice(-3)===' 💧')){
+      var base=k.slice(0,-3);
+      if(EN[base]!=null){ n.nodeValue=t.replace(base, EN[base]); return; }
+    }
     var o=t;
     for(var i=0;i<PH.length;i++){ if(o.indexOf(PH[i][0])>=0) o=o.split(PH[i][0]).join(PH[i][1]); }
     if(o!==t) n.nodeValue=o;
