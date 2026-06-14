@@ -30,6 +30,28 @@ small{color:var(--mut)}
 </style></head><body>
 <h1>⚙ Einstellungen <a href="/" style="font-size:14px;font-weight:400">← Dashboard</a></h1>
 
+<div class="sec">System &amp; Netzwerk</div>
+<div class="card">
+<div class="row"><label>Sprache / Language</label><select id="sy_lang" style="width:140px" onchange="setLang(this.value)"><option value="de">Deutsch</option><option value="en">English</option></select> <small>Stellt die Sprache des WebUI um (pro Browser gespeichert).</small></div>
+<div class="row"><label>Hostname (mDNS)</label><input id="sy_host" style="width:140px;text-align:left"> <small>Gerät erreichbar als http://&lt;name&gt;.local/ — wirkt nach Reboot</small></div>
+<div class="row"><label>Zeitzone</label><select id="sy_tz" style="width:230px"><option value="CET-1CEST,M3.5.0,M10.5.0/3">Mitteleuropa – Berlin/Wien/Zürich (CET/CEST)</option><option value="GMT0BST,M3.5.0/1,M10.5.0">Westeuropa – London/Lissabon (GMT/BST)</option><option value="EET-2EEST,M3.5.0/3,M10.5.0/4">Osteuropa – Athen/Helsinki (EET/EEST)</option><option value="MSK-3">Moskau (MSK, ohne Sommerzeit)</option><option value="UTC0">UTC (ohne Sommerzeit)</option><option value="EST5EDT,M3.2.0,M11.1.0">USA Ost – New York (ET)</option><option value="PST8PDT,M3.2.0,M11.1.0">USA West – Los Angeles (PT)</option></select> <small>Ortszeit für Licht-/Bewässerungs-/Steckdosen-Zeitpläne. Wirkt sofort, inkl. autom. Sommerzeit</small></div>
+<div class="row"><label>Hotspot-Passwort</label><input id="sy_appw" readonly style="width:170px;text-align:left"> <small>WLAN „iHub" für Notzugriff ohne Heimnetz — pro Gerät zufällig (nicht mehr universell)</small></div>
+<div class="row"><label>API-Schutz</label><input type="checkbox" id="sy_prot" disabled> <small>Sobald ein <b>Token</b> gesetzt ist, brauchen ALLE Steuer-/Settings-/Diagnose-Endpunkte <code>?key=&lt;Token&gt;</code> (automatisch erzwungen). Ohne Token bleibt alles offen. Dashboard fragt bei Bedarf einmalig nach dem Token.</small></div>
+</div>
+
+<div class="sec">Sicherheit &amp; Login</div>
+<div class="card">
+<div class="row"><label>Benutzername</label><input id="au_user" style="width:160px;text-align:left" value="admin"></div>
+<div class="row"><label>Neues Passwort</label><input id="au_pass" type="password" style="width:200px" placeholder="leer lassen = unverändert"></div>
+<div class="row"><label>Passwort wiederholen</label><input id="au_pass2" type="password" style="width:200px"></div>
+<div class="row"><label>Login deaktivieren</label><input type="checkbox" id="au_clear"> <small>Entfernt das Passwort — WebUI wieder ohne Anmeldung erreichbar.</small></div>
+<div class="row"><label>Login-Status</label><span id="au_stat" style="color:#9ab"></span> &nbsp;<button type="button" style="background:#283142" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">Abmelden</button></div>
+<hr style="border:0;border-top:1px solid #2c3744;margin:12px 0">
+<div class="row"><label>API-Token</label><input id="mq_token" style="width:230px;text-align:left" placeholder="leer lassen = unverändert"></div>
+<div class="row"><label></label><small>Für Home Assistant / Skripte / Headless-OTA: <code>?key=&lt;Token&gt;</code> oder Header <code>Authorization: Bearer &lt;Token&gt;</code>. Login per Browser läuft über das Passwort oben.</small></div>
+<div class="row"><label>Token entfernen</label><input type="checkbox" id="mq_token_clear"> <small id="tk_stat"></small></div>
+</div>
+
 <div class="sec">Grow-Profile — Sollwerte je Profil</div>
 <div class="card" style="overflow-x:auto">
 <table id="sp"><thead><tr>
@@ -138,32 +160,10 @@ small{color:var(--mut)}
 <small>Additive Korrektur driftender RJ12-Sensoren — wird VOR der VPD-Berechnung angewandt. Bereich ±10 °C / ±20 %. Tipp: gegen ein Referenzthermo-/hygrometer abgleichen.</small>
 </div>
 
-<div class="sec">System &amp; Netzwerk</div>
-<div class="card">
-<div class="row"><label>Sprache / Language</label><select id="sy_lang" style="width:140px" onchange="setLang(this.value)"><option value="de">Deutsch</option><option value="en">English</option></select> <small>Stellt die Sprache des WebUI um (pro Browser gespeichert).</small></div>
-<div class="row"><label>Hostname (mDNS)</label><input id="sy_host" style="width:140px;text-align:left"> <small>Gerät erreichbar als http://&lt;name&gt;.local/ — wirkt nach Reboot</small></div>
-<div class="row"><label>Zeitzone</label><select id="sy_tz" style="width:230px"><option value="CET-1CEST,M3.5.0,M10.5.0/3">Mitteleuropa – Berlin/Wien/Zürich (CET/CEST)</option><option value="GMT0BST,M3.5.0/1,M10.5.0">Westeuropa – London/Lissabon (GMT/BST)</option><option value="EET-2EEST,M3.5.0/3,M10.5.0/4">Osteuropa – Athen/Helsinki (EET/EEST)</option><option value="MSK-3">Moskau (MSK, ohne Sommerzeit)</option><option value="UTC0">UTC (ohne Sommerzeit)</option><option value="EST5EDT,M3.2.0,M11.1.0">USA Ost – New York (ET)</option><option value="PST8PDT,M3.2.0,M11.1.0">USA West – Los Angeles (PT)</option></select> <small>Ortszeit für Licht-/Bewässerungs-/Steckdosen-Zeitpläne. Wirkt sofort, inkl. autom. Sommerzeit</small></div>
-<div class="row"><label>Hotspot-Passwort</label><input id="sy_appw" readonly style="width:170px;text-align:left"> <small>WLAN „iHub" für Notzugriff ohne Heimnetz — pro Gerät zufällig (nicht mehr universell)</small></div>
-<div class="row"><label>API-Schutz</label><input type="checkbox" id="sy_prot" disabled> <small>Sobald ein <b>Token</b> gesetzt ist, brauchen ALLE Steuer-/Settings-/Diagnose-Endpunkte <code>?key=&lt;Token&gt;</code> (automatisch erzwungen). Ohne Token bleibt alles offen. Dashboard fragt bei Bedarf einmalig nach dem Token.</small></div>
-</div>
-
-<div class="sec">Sicherheit &amp; Login</div>
-<div class="card">
-<div class="row"><label>Benutzername</label><input id="au_user" style="width:160px;text-align:left" value="admin"></div>
-<div class="row"><label>Neues Passwort</label><input id="au_pass" type="password" style="width:200px" placeholder="leer lassen = unverändert"></div>
-<div class="row"><label>Passwort wiederholen</label><input id="au_pass2" type="password" style="width:200px"></div>
-<div class="row"><label>Login deaktivieren</label><input type="checkbox" id="au_clear"> <small>Entfernt das Passwort — WebUI wieder ohne Anmeldung erreichbar.</small></div>
-<div class="row"><label>Login-Status</label><span id="au_stat" style="color:#9ab"></span> &nbsp;<button type="button" style="background:#283142" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">Abmelden</button></div>
-<hr style="border:0;border-top:1px solid #2c3744;margin:12px 0">
-<div class="row"><label>API-Token</label><input id="mq_token" style="width:230px;text-align:left" placeholder="leer lassen = unverändert"></div>
-<div class="row"><label></label><small>Für Home Assistant / Skripte / Headless-OTA: <code>?key=&lt;Token&gt;</code> oder Header <code>Authorization: Bearer &lt;Token&gt;</code>. Login per Browser läuft über das Passwort oben.</small></div>
-<div class="row"><label>Token entfernen</label><input type="checkbox" id="mq_token_clear"> <small id="tk_stat"></small></div>
-</div>
-
 <div class="sec">Firmware-Update</div>
 <div class="card">
 <div class="row"><label>Aktuelle Firmware</label><span id="fw_build" style="color:#9ab">…</span></div>
-<div class="row"><label>Neue .bin-Datei</label><input type="file" id="fw_file" accept=".bin"></div>
+<div class="row"><label>Neue .bin-Datei</label><input type="file" id="fw_file" accept=".bin" style="display:none" onchange="fwPick()"><button type="button" style="background:#283142" onclick="fw_file.click()">Datei wählen</button> <span id="fw_fname" style="color:#9ab;margin-left:8px">keine ausgewählt</span></div>
 <div class="row"><label></label><button type="button" onclick="fwUpload()">Hochladen &amp; Flashen</button> <button type="button" style="background:#283142;margin-left:8px" onclick="fwReboot()">Neustart</button></div>
 <div class="row" id="fw_progrow" style="display:none"><label>Fortschritt</label><progress id="fw_prog" max="100" value="0" style="width:220px;vertical-align:middle"></progress> <span id="fw_pct" style="margin-left:8px"></span></div>
 <div class="row"><label></label><small>Lädt die <code>.bin</code> (aus <code>.pio/build/ihub/firmware.bin</code>) direkt aufs Gerät; danach startet der iHub neu. Schlägt ein Image fehl, rollt der Boot-Validator automatisch auf die vorherige Version zurück.</small></div>
@@ -366,6 +366,7 @@ async function importCfg(inp){
 function setLang(v){localStorage.setItem('ihub_lang',v);location.reload();}
 function keyq(){try{const k=localStorage.getItem('apikey');return k?('?key='+encodeURIComponent(k)):'';}catch(e){return '';}}
 function fwReboot(){if(!confirm('Gerät jetzt neu starten?'))return;fetch('/reboot'+keyq(),{method:'POST'}).then(()=>{ok.textContent='Neustart…';});}
+function fwPick(){fw_fname.textContent=fw_file.files[0]?fw_file.files[0].name:'keine ausgewählt';}
 function fwUpload(){
  const f=fw_file.files[0];if(!f){alert('Bitte zuerst eine .bin-Datei wählen');return;}
  if(!confirm('Firmware „'+f.name+'" ('+((f.size/1024)|0)+' KB) jetzt flashen?'))return;
