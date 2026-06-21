@@ -10,12 +10,13 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/util/util.h"
+#include "esp_timer.h"
 #include <string.h>
 #include <stdio.h>
 
 static const char *TAG = "ble";
 
-#define MAXDEV 28
+#define MAXDEV 40
 typedef struct {
     bool     used;
     uint8_t  mac[6];
@@ -26,6 +27,7 @@ typedef struct {
     bool     th;        // erkannter Temp/Feuchte-Sensor (TP357)
     float    temp;      // °C
     float    hum;       // %
+    int64_t  last_us;   // esp_timer_get_time() beim letzten Empfang (Aging gegen stale Werte)
 } dev_t;
 
 static dev_t s_dev[MAXDEV];
@@ -35,16 +37,22 @@ static uint8_t s_own_addr_type;
 static void store_adv(const struct ble_gap_disc_desc *d)
 {
     xSemaphoreTake(s_mtx, portMAX_DELAY);
-    int slot = -1, freeslot = -1, weakest = -1;
+    int slot = -1, freeslot = -1, weakest = -1, weakest_nonth = -1;
     bool matched = false;
     for (int i = 0; i < MAXDEV; i++) {
         if (s_dev[i].used && memcmp(s_dev[i].mac, d->addr.val, 6) == 0) { slot = i; matched = true; break; }
         if (!s_dev[i].used && freeslot < 0) freeslot = i;
-        if (s_dev[i].used && (weakest < 0 || s_dev[i].rssi < s_dev[weakest].rssi)) weakest = i;
+        if (s_dev[i].used) {
+            if (weakest < 0 || s_dev[i].rssi < s_dev[weakest].rssi) weakest = i;
+            // erkannte TH-Sensoren (Klimaquellen!) NICHT als Verdrängungsopfer betrachten — sonst
+            // wirft ein zufälliges Fremdgerät (Handy/Watch) den wichtigen, oft schwachen Sensor raus.
+            if (!s_dev[i].th && (weakest_nonth < 0 || s_dev[i].rssi < s_dev[weakest_nonth].rssi)) weakest_nonth = i;
+        }
     }
     if (!matched) {
+        int victim = (weakest_nonth >= 0) ? weakest_nonth : weakest;   // TH-Sensoren schonen
         if (freeslot >= 0) slot = freeslot;
-        else if (weakest >= 0 && d->rssi > s_dev[weakest].rssi) slot = weakest;  // volles Tabelle: schwächstes verdrängen
+        else if (victim >= 0 && d->rssi > s_dev[victim].rssi) slot = victim;  // volle Tabelle: schwächstes Nicht-TH verdrängen
         if (slot < 0) { xSemaphoreGive(s_mtx); return; }
         memset(&s_dev[slot], 0, sizeof(s_dev[slot]));   // frischer Eintrag
     }
@@ -75,6 +83,7 @@ static void store_adv(const struct ble_gap_disc_desc *d)
         }
     }
     e->th = (strncmp(e->name, "TP35", 4) == 0);   // als Klimasensor erkannt
+    e->last_us = esp_timer_get_time();            // Empfangszeit für Aging
     xSemaphoreGive(s_mtx);
 }
 
@@ -117,9 +126,12 @@ void ble_sensors_start(void)
 bool ble_get_th(const uint8_t mac[6], float *temp, float *hum)
 {
     bool ok = false;
+    const int64_t TTL_US = 300LL * 1000000;   // 5 min: ältere Werte gelten als veraltet (Aging)
+    int64_t now = esp_timer_get_time();
     xSemaphoreTake(s_mtx, portMAX_DELAY);
     for (int i = 0; i < MAXDEV; i++) {
         if (s_dev[i].used && s_dev[i].th && memcmp(s_dev[i].mac, mac, 6) == 0) {
+            if (now - s_dev[i].last_us > TTL_US) break;   // zu alt → wie "kein Wert" (Failsafe statt stale)
             if (temp) *temp = s_dev[i].temp;
             if (hum)  *hum  = s_dev[i].hum;
             ok = true; break;

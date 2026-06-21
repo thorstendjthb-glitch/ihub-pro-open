@@ -31,6 +31,9 @@ static chamber_state_t s_cstate[N_CHAMBERS];   // Live-Zustand je Kammer
 static climate_status_t s_status;              // Aggregat (für LEDs/MQTT/Dashboard-Status)
 static bool s_ac_throttle = false;             // AC-Kammer fordert AC an → iFan-Eigner drosseln
                                                // (entkoppelt Rechen-Kammer von Stell-Kammer)
+static bool s_ifan_force_max = false;          // Übertemperatur/Schimmel der iFan-Eigner-Kammer →
+                                               // Notfall-Vollabluft hat Vorrang vor dem manuellen
+                                               // iFan-Override (Sicherheit vor Komfort)
 
 // ── Alarm-Ereignisprotokoll (RAM-Ringpuffer) ──
 #define ALOG_N 24
@@ -463,8 +466,12 @@ static void regulate_chamber(int ch, const sensor_data_t *d, const struct tm *no
     float ah_in  = abs_humidity_gm3(temp, rh);
     float ah_att = ref_ok ? abs_humidity_gm3(d->ref_temp_c, d->ref_humidity_pct) : 999.0f;
     bool  attic_drier = ref_ok && (ah_att < ah_in - 1.0f);
-    bool  vent_cool = need_cool && (!ref_ok || attic_cooler);
-    bool  vent_dry  = need_dry  && (!ref_ok || attic_drier);
+    // Free-Cooling-Rampe NUR, wenn die Quellluft NACHWEISLICH besser ist (gültige Referenz +
+    // kühler/trockener). Ohne gültige Referenz (Speicher-Sensor aus) NICHT blind hochfahren —
+    // sonst zieht die Abluft womöglich heiße Speicherluft rein (unproduktiv). Stattdessen bleibt
+    // sie auf Grundlast und die AC-Feedback-Logik fordert bei Bedarf die Klimaanlage an.
+    bool  vent_cool = need_cool && attic_cooler;
+    bool  vent_dry  = need_dry  && attic_drier;
     bool  ac_active = false;   // AC kühlt/trocknet diese Kammer → Abluft auf Grundlast drosseln
     if (ch == g->ac_chamber) { // Klimaanlage steht physisch NUR in dieser Kammer (Default A)
         // AC-Anforderung per ECHTEM TEMPERATUR-/VPD-FEEDBACK (statt nur Dachboden-Differenz):
@@ -486,7 +493,15 @@ static void regulate_chamber(int ch, const sensor_data_t *d, const struct tm *no
         const float DRY_OK  = 0.05f;  // kPa Mindest-VPD-Anstieg     = "Lüften trocknet"
 
         if (need_cool) {
-            if (!s_cool_since[ch]) { s_cool_since[ch] = now_us; s_cool_t0[ch] = temp; }
+            // Free-Cooling AUSSICHTSLOS → Klima SOFORT anfordern (ohne ac_delay_min-Beobachtung):
+            //  • over_temp: akute Übertemperatur (jede Minute Verzögerung heizt weiter auf), ODER
+            //  • ref_ok && !attic_cooler: Quellluft GÜLTIG gemessen und NICHT kühler als die Kammer
+            //    → Lüften kann per Definition nicht kühlen, also direkt die Klimaanlage.
+            // Bei FEHLENDER Referenz (Speicher-Sensor aus) weiter die normale Feedback-Beobachtung.
+            // Latch bleibt gesetzt, bis need_cool (temp ≤ temp_target) wegfällt.
+            if (over_temp || (ref_ok && !attic_cooler)) {
+                s_ac_cool_latch[ch] = true;
+            } else if (!s_cool_since[ch]) { s_cool_since[ch] = now_us; s_cool_t0[ch] = temp; }
             else if (!s_ac_cool_latch[ch] && (now_us - s_cool_since[ch] >= delay_us)) {
                 if (temp <= s_cool_t0[ch] - COOL_OK) {        // kühlt erfolgreich → Fenster neu
                     s_cool_since[ch] = now_us; s_cool_t0[ch] = temp;
@@ -517,12 +532,19 @@ static void regulate_chamber(int ch, const sensor_data_t *d, const struct tm *no
 
     // ── Stufenloser RS-485-iFan: Grundlast + Rampe (nur Eigner steuert physisch) ──
     int spd;
-    if (over_temp || cs->alarm_mold) {     // NUR Übertemperatur/Schimmel → Vollgas; bei Unter-
-        spd = g->fan_max;                  // temperatur KEINE Vollabluft (zöge kalte Luft rein)
-    } else if (ac_active || (s_ac_throttle && rs485_owner)) {
-        spd = g->fan_base;                 // AC übernimmt das Kühlen/Trocknen → Abluft NUR Grundlast,
-                                           // sonst bläst sie die gekühlte Luft raus und zieht warme nach.
-                                           // s_ac_throttle greift auch, wenn AC-Kammer != iFan-Eigner.
+    if (ac_active || (s_ac_throttle && rs485_owner)) {
+        // AC kühlt/trocknet aktiv → Abluft NUR Grundlast, sonst bläst sie die gekühlte Luft raus
+        // und zieht warme/feuchte Luft nach. VORRANG, auch bei Übertemperatur — sonst arbeiten
+        // Klima und Abluft gegeneinander. s_ac_throttle greift auch, wenn AC-Kammer != iFan-Eigner.
+        spd = g->fan_base;
+    } else if (over_temp || cs->alarm_mold) {
+        // Übertemperatur/Schimmel OHNE aktive AC: Vollabluft NUR, wenn die Quellluft das wirklich
+        // verbessert (nachweislich kühler bzw. trockener) ODER gar keine Referenz existiert (dann
+        // ist Notentlüftung die einzige Option). Ist die Außenluft messbar schlechter (heißer
+        // Sommer-Speicher), bringt Vollgas nichts und zieht nur wärmere Luft rein → Grundlast.
+        bool vent_helps = over_temp ? (!ref_ok || attic_cooler)
+                                    : (!ref_ok || attic_drier);   // sonst: alarm_mold
+        spd = vent_helps ? g->fan_max : g->fan_base;
     } else {
         int add = 0;
         if (vent_cool) add = (int)(t_over * 18.0f);
@@ -532,7 +554,13 @@ static void regulate_chamber(int ch, const sensor_data_t *d, const struct tm *no
     if (spd < g->fan_base) spd = g->fan_base;
     if (spd > g->fan_max)  spd = g->fan_max;
     cs->ifan_pct = (uint8_t)spd;
-    if (rs485_owner) { ifan_set(spd); s_status.ifan_pct = (uint8_t)spd; }
+    if (rs485_owner) {
+        ifan_set(spd); s_status.ifan_pct = (uint8_t)spd;
+        // Nur die TATSÄCHLICHE Notfall-Vollabluft (over_temp/Schimmel UND Quellluft hilft → fan_max)
+        // übersteuert den manuellen Override (Sicherheit vor Komfort). Bleibt die Abluft auf
+        // Grundlast (AC kühlt / Außenluft schlechter), behält ein manueller iFan-Override Vorrang.
+        if ((over_temp || cs->alarm_mold) && spd >= (int)g->fan_max) s_ifan_force_max = true;
+    }
 }
 
 static void regulate(const sensor_data_t *d, const struct tm *now)
@@ -542,6 +570,7 @@ static void regulate(const sensor_data_t *d, const struct tm *now)
     s_status.alarm_sensor = false;
     s_status.ac_demand = false;
     s_status.ac_mode   = 0;
+    s_ifan_force_max = false;   // pro Zyklus neu; die Eigner-Kammer setzt es bei over_temp/Schimmel
     // Keine AC-Kammer konfiguriert → Drossel-Flag sicher löschen (die AC-Kammer setzt es sonst
     // jeden Zyklus frisch; nur der -1/„keine AC"-Fall bleibt sonst hängen).
     { const grow_global_t *gg = climate_global();
@@ -637,9 +666,9 @@ static void task(void *arg)
 
         regulate(&d, &now);          // Aktoren stellen
         int ifan_man = climate_get_ifan_manual();
-        if (ifan_man >= 0) {         // manueller Abluft-Override hat Vorrang vor der Automatik
-            ifan_set((uint8_t)ifan_man);
-            s_status.ifan_pct = (uint8_t)ifan_man;
+        if (ifan_man >= 0 && !s_ifan_force_max) {   // manueller Abluft-Override — AUSSER die
+            ifan_set((uint8_t)ifan_man);            // Notfall-Vollabluft (over_temp/Schimmel) hat
+            s_status.ifan_pct = (uint8_t)ifan_man;  // Vorrang (Sicherheit vor Komfort)
         }
         int humid_man = climate_get_humid_manual();
         if (humid_man >= 0) humidifier_set(humid_man);   // Befeuchter-Override
